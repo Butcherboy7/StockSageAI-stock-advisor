@@ -46,69 +46,71 @@ class ScreeningAgent:
             return self._get_fallback_stocks(limit)
     
     def _scrape_market_cap_stocks(self, limit: int) -> List[Dict]:
-        """Scrape stocks from screener.in market cap page"""
+        """Scrape stocks from screener.in using alternative approach"""
         try:
-            # URL for top companies by market cap
-            url = f"{self.base_url}/screens/71/top-companies-by-market-cap/"
-            
-            response = self.session.get(url, timeout=10)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.content, 'html.parser')
+            # Try different screener.in endpoints
+            urls_to_try = [
+                f"{self.base_url}/screen/raw/",
+                f"{self.base_url}/screens/67881/top-500-companies-by-market-capitalization/",
+                f"{self.base_url}/"
+            ]
             
             stocks = []
             
-            # Look for the main table containing stock data
-            table = soup.find('table', class_='data-table')
-            if not table:
-                # Try alternative selectors
-                table = soup.find('table')
-            
-            if table:
-                rows = table.find_all('tr')[1:]  # Skip header row
-                
-                for row in rows[:limit]:
-                    try:
-                        cells = row.find_all('td')
-                        if len(cells) >= 3:
-                            # Extract company name and ticker
-                            name_cell = cells[0]
-                            name_link = name_cell.find('a')
+            for url in urls_to_try:
+                try:
+                    response = self.session.get(url, timeout=10)
+                    response.raise_for_status()
+                    
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # Look for company links that follow screener.in pattern
+                    company_links = soup.find_all('a', href=re.compile(r'/company/[^/]+/?$'))
+                    
+                    for link in company_links[:limit*2]:  # Get extra to filter
+                        try:
+                            href = link.get('href', '')
+                            company_name = link.text.strip()
                             
-                            if name_link:
-                                company_name = name_link.text.strip()
-                                href = name_link.get('href', '')
+                            # Extract ticker from URL
+                            ticker_match = re.search(r'/company/([^/]+)/?$', href)
+                            if ticker_match and company_name:
+                                ticker = ticker_match.group(1)
                                 
-                                # Extract ticker from URL
-                                ticker_match = re.search(r'/company/([^/]+)/', href)
-                                ticker = ticker_match.group(1) if ticker_match else None
+                                # Skip if ticker looks invalid
+                                if len(ticker) < 2 or len(ticker) > 15:
+                                    continue
                                 
-                                if ticker and company_name:
-                                    # Extract additional data if available
-                                    market_cap = cells[1].text.strip() if len(cells) > 1 else 'N/A'
-                                    current_price = cells[2].text.strip() if len(cells) > 2 else 'N/A'
-                                    
-                                    # Clean the ticker (remove .NS if present for yfinance compatibility)
-                                    clean_ticker = ticker.replace('.NS', '')
-                                    
+                                # Clean the ticker
+                                clean_ticker = ticker.replace('.NS', '').upper()
+                                
+                                # Avoid duplicates
+                                if not any(s['ticker'] == clean_ticker for s in stocks):
                                     stock_data = {
                                         'ticker': clean_ticker,
                                         'name': company_name,
-                                        'market_cap': market_cap,
-                                        'current_price': current_price,
+                                        'market_cap': 'N/A',
+                                        'current_price': 'N/A',
                                         'source': 'screener.in'
                                     }
-                                    
                                     stocks.append(stock_data)
                                     
-                    except Exception as e:
-                        print(f"Error parsing row: {e}")
-                        continue
+                                    if len(stocks) >= limit:
+                                        break
+                        except Exception as e:
+                            continue
+                    
+                    if stocks:
+                        break  # Found stocks, no need to try other URLs
+                        
+                except Exception as e:
+                    print(f"Failed to scrape {url}: {e}")
+                    continue
             
             # Add small delay to be respectful
             time.sleep(random.uniform(1, 2))
             
-            return stocks
+            return stocks[:limit]
             
         except Exception as e:
             print(f"Error scraping market cap stocks: {e}")

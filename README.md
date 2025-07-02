@@ -31,7 +31,7 @@ A sophisticated multi-agent AI system that provides intelligent stock analysis a
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   pip install streamlit pandas numpy yfinance requests beautifulsoup4 trafilatura nltk spacy plotly python-dateutil
    python -m spacy download en_core_web_sm
    ```
 

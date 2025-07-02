@@ -1,0 +1,52 @@
+Prompt:
+
+I want to build a smart stock advisor MVP for a hackathon. It doesn't need to be production-level or deployed — the goal is to showcase a multi-agent AI system that mimics how an advanced stock advisor would think.
+
+Here's what I want the system to do:
+
+👨‍👩‍👧‍👦 Multi-Agent Breakdown
+Screening Agent: Just return a few hardcoded Indian stock tickers (like RELIANCE.NS, TCS.NS, etc.) to simulate screening for this demo.
+
+Fundamental Analysis Agent:
+
+Use the yfinance Python package to pull live fundamental metrics like PE ratio, PB ratio, Return on Equity (ROE), etc.
+
+These values will be used to evaluate how fundamentally strong each stock is.
+
+Sentiment Analysis Agent:
+
+Use the NewsAPI (https://newsapi.org/) to get the latest news headlines related to each stock or company.
+
+Apply both NLTK’s VADER sentiment analyzer and spaCy’s NLP pipeline to analyze these headlines.
+
+Extract an average sentiment score per company (on a scale of -1 to 1) and optionally count how many positive/negative words or named entities like CEOs, brands, etc., appear in headlines.
+
+This agent simulates how an investor might assess “public buzz.”
+
+Aggregator Agent:
+
+Normalize the values from fundamental and sentiment agents.
+
+Combine them using a simple formula (e.g., 50% fundamentals + 50% sentiment, or adjustable weighting) to create an overall “score” for each stock.
+
+Based on the score, classify the stock as BUY, HOLD, or SELL.
+
+📦 APIs and Libraries to Use
+yfinance — to get stock fundamentals (no auth needed).
+
+newsapi.org — to get latest headlines (requires free API key).
+
+nltk (specifically VADER) — for sentiment analysis.
+
+spacy — for entity recognition and token-level insight on news.
+
+Optional: pandas, streamlit, or simple print-based CLI for output.
+
+⚙️ Output
+I want the end result to be either a console/table output or a simple UI that:
+
+Lists each stock with its fundamentals, sentiment score, and overall recommendation.
+
+If possible, let me adjust weights between fundamentals and sentiment in real time (e.g., via Streamlit slider).
+
+Keep the implementation simple and focused on showing the capabilities of intelligent AI agents working together, even if some data (like tickers) is hardcoded. No need to structure into multiple folders — just write clean modular code using Python functions and help me get the logic working quickly.
